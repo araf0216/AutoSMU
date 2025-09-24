@@ -274,10 +274,10 @@ app.get("/", async (req, resp) => {
 })
 
 app.post("/", (req, res) => {
-    // console.log("printing req body")
-    // console.log(req.body)
+    console.log("printing req body")
+    console.log(req.body)
 
-    res.json(req.body)
+    res.json({"test": "post"})
 })
 
 app.listen(3000)
