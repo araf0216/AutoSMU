@@ -23,33 +23,6 @@ const getDB = async (sourceID, {filters = undefined, sort = undefined, count = u
     data_source_id: sourceID,
     ...(filters && {filter: filters}),
     ...(sort && {sorts: sort}),
-    // filter: {
-    // //   or: [
-    // //     {
-    // //       property: 'In stock',
-    // //       checkbox: {
-    // //         equals: true,
-    // //       },
-    // //     },
-    // //     {
-    // //       property: 'Cost of next trip',
-    // //       number: {
-    // //         greater_than_or_equal_to: 2,
-    // //       },
-    // //     },
-    // //   ],
-    //   and: [
-    //     {
-    //         property: 
-    //     }
-    //   ]
-    // },
-    // sorts: [
-    //   {
-    //     property: 'Last ordered',
-    //     direction: 'ascending',
-    //   },
-    // ],
     ...(count && {page_size: count})
   })
 
@@ -78,6 +51,13 @@ const createPage = async (pageInfo) => {
     // console.log(res)
 
     return res
+}
+
+const deletePage = async (pageID) => {
+    await notion.pages.update({
+        page_id: pageID,
+        in_trash: true
+    })
 }
 
 const getPerson = async (name) => {
@@ -188,7 +168,7 @@ const getTasks = async (training) => {
 
 // const setTrainings = async (person, trainings) => {}
 
-const setTasks = async (personFD, tasks) => {
+const setTasks = async (person, personFD, tasks) => {
     // console.log("running setTasks: " + personFD)
 
     const allRes = []
@@ -197,8 +177,6 @@ const setTasks = async (personFD, tasks) => {
         console.log("creating task: " + task["title"])
 
         // create new page in tasks db - with title, icon, and personFD of task
-        const personRes = await getPage(personFD)
-        const person = personRes["properties"]["Notion Account*"]["people"][0]["id"]
 
         const info = {
             "parent": {
@@ -258,7 +236,7 @@ const setTasks = async (personFD, tasks) => {
     return allRes
 }
 
-const assignTasks = async (personFD) => {
+const assignTasks = async (person, personFD) => {
     
     const teams = await getTeams(personFD)
     const trainingsRes = (await Promise.all(teams.map(async team => await getTrainings(team)))).flat()
@@ -268,7 +246,7 @@ const assignTasks = async (personFD) => {
 
     // console.log(tasks)
 
-    const setRes = await setTasks(personFD, tasks)
+    const setRes = await setTasks(person, personFD, tasks)
 
     const props = {
         "SMU Enrollment": {
@@ -282,6 +260,21 @@ const assignTasks = async (personFD) => {
 
     return res
 
+}
+
+const deleteTasks = async (person) => {
+    const personFilter = {
+        "property": "Assignment",
+        "people": {
+            "contains": person
+        }
+    }
+
+    const res = await getDB(databases.Tasks, {filters: personFilter})
+
+    await Promise.all(res.results.map(async page => await deletePage(page["id"])))
+
+    return
 }
 
 app.get("/", async (req, resp) => {
@@ -327,6 +320,8 @@ app.post("/", async (req, res) => {
         return res.json(msJ)
     }
 
+    const person = personFD["properties"]["Notion Account*"]["people"][0]["id"]
+
     const personStart = personInfo["properties"]["FT Start Date"]["date"]["start"]
     const startsToday = personStart === new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" })
 
@@ -335,11 +330,13 @@ app.post("/", async (req, res) => {
     const personTasks = personInfo["properties"]["Tasks SMU"]["relation"]
 
 
-    if (startsToday && personEnrolled === "Not Enrolled" || startsToday && personTasks.length > 0 || personEnrolled === "Reset Enrollment") {
+    if ((startsToday && personEnrolled === "Not Enrolled" && personTasks.length === 0) || personEnrolled === "Reset Enrollment") {
 
         console.log("triggering task assignment to " + personFD + " within " + parentDB)
 
-        const autoRes = await assignTasks(personFD)
+        if (personEnrolled === "Reset Enrollment") await deleteTasks(person)
+
+        await assignTasks(person, personFD)
 
         const msJ = {"request accepted": "tasks assigned to " + personFD + " within " + parentDB}
         console.log(msJ)
