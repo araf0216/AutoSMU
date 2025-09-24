@@ -320,7 +320,7 @@ app.post("/", async (req, res) => {
         return res.json(msJ)
     }
 
-    const person = personFD["properties"]["Notion Account*"]["people"][0]["id"]
+    const person = personInfo["properties"]["Notion Account*"]["people"][0]["id"]
 
     const personStart = personInfo["properties"]["FT Start Date"]["date"]["start"]
     const startsToday = personStart === new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" })
