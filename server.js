@@ -86,18 +86,24 @@ const getPerson = async (name) => {
 
 }
 
-const getTeam = async (teamName) => {
+// const getTeam = async (personFD) => {
 
-    const teamFilter = {
-        "property": "Name",
-        "title": {
-            "equals": teamName
-        }
-    }
+//     const teamFilter = {
+//         "property": "Name",
+//         "title": {
+//             "equals": teamName
+//         }
+//     }
 
-    const res = await getDB(databases.Teams, {filters: teamFilter, count: 1})
+//     const res = await getDB(databases.Teams, {filters: teamFilter, count: 1})
 
-    return res.results[0]["id"]
+// }
+
+const getTeams = async (personFD) => {
+
+    const res = await getPage(personFD)
+
+    return res["properties"]["Teams"]["relation"].map(team => team["id"])
 
 }
 
@@ -237,9 +243,6 @@ const setTasks = async (personFD, tasks) => {
         
         console.log(res)
 
-        // remove this after testing!!!!!!!!!!!!!
-        return res
-
         allRes.push(res)
     }
 
@@ -248,8 +251,8 @@ const setTasks = async (personFD, tasks) => {
 
 const assignTasks = async (personFD) => {
     
-    const team = await getTeam("Technology")
-    const trainingsRes = await getTrainings(team)
+    const teams = await getTeams(personFD)
+    const trainingsRes = (await Promise.all(teams.map(async team => await getTrainings(team)))).flat()
     const trainings = trainingsRes.filter((train, i) => trainingsRes.indexOf(train) === i)
 
     const tasks = (await Promise.all(trainings.map(async train => await getTasks(train)))).filter(task => Object.keys(task).length > 0)
@@ -274,13 +277,52 @@ app.get("/", async (req, resp) => {
 
 })
 
-app.post("/", (req, res) => {
+app.post("/", async (req, res) => {
     console.log("printing req")
 
     console.log(JSON.stringify(req.headers, null, 4))
     console.log(JSON.stringify(req.body, null, 4))
 
-    res.json({"test": "post"})
+    if (!req.body.hasOwnProperty("entity") || !req.body.hasOwnProperty("data") || !req.body.data.hasOwnProperty("parent")) {
+        return res.json({"request invalid": "invalid request"})
+    }
+
+    const page = req.body.entity
+    const parentDB = req.body.data.parent.data_source_id
+
+    if (parentDB !== databases.FD) {
+        return res.json({"request ignored": "unrelated DB changes"})
+    }
+
+    const personFD = page.id
+    const personInfo = await getPage(personFD)
+    const personTeams = personInfo["properties"]["Teams"]["relation"]
+
+    if (personTeams.length === 0) {
+        return res.json({"request ignored": "no teams"})
+    }
+
+    const personStart = personInfo["properties"]["FT Start Date"]["date"]["start"]
+    const startsToday = personStart === new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" })
+
+    const personEnrolled = personInfo["properties"]["SMU Enrollment"]["status"]["name"]
+
+    const personTasks = personInfo["properties"]["Tasks SMU"]["relation"]
+
+
+    if (startsToday && personEnrolled === "Not Enrolled" || startsToday && personTasks.length > 0 || personEnrolled === "Reset Enrollment") {
+
+        console.log("triggering task assignment to " + personFD + " within " + parentDB)
+
+        await assignTasks(personFD)
+
+        return res.json({"request accepted": "tasks assigned to " + personFD + " within " + parentDB})
+
+    }
+
+    return res.json({"request denied": "unmet individual conditions"})
+    
 })
+
 
 app.listen(3000)
