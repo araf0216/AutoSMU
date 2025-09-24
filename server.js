@@ -263,12 +263,21 @@ const assignTasks = async (personFD) => {
 
 app.get("/", async (req, resp) => {
 
-    const personFD = "27540a8e-51bc-81a5-948d-c9139d2fa2f3"
+    // const personFD = "27540a8e-51bc-81a5-948d-c9139d2fa2f3"
 
-    const res = assignTasks(personFD)
+    // const res = assignTasks(personFD)
 
-    resp.json(res)
+    // resp.json(res)
 
+    resp.json({"test": "get"})
+
+})
+
+app.post("/", (req, res) => {
+    console.log("printing req")
+    console.log(req)
+
+    res.json({"test": "post"})
 })
 
 app.listen(3000)
