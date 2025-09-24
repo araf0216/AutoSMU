@@ -4,6 +4,7 @@ const app = express()
 const { Client } = require('@notionhq/client')
 const notion = new Client({ auth: process.env.NOTION_API_KEY })
 
+app.use(express.json())
 
 // DB info - test workspace
 const databases = {
