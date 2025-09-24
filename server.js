@@ -275,8 +275,10 @@ app.get("/", async (req, resp) => {
 })
 
 app.post("/", (req, res) => {
-    console.log("printing req body")
-    console.log(req.body)
+    console.log("printing req")
+
+    console.log(JSON.stringify(req.headers, null, 4))
+    console.log(JSON.stringify(req.body, null, 4))
 
     res.json({"test": "post"})
 })
