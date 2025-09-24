@@ -63,10 +63,19 @@ const getPage = async (pageID) => {
     return res
 }
 
+const updatePage = async (pageID, props) => {
+    const res = await notion.pages.update({
+        page_id: pageID,
+        properties: props
+    })
+
+    return res
+}
+
 const createPage = async (pageInfo) => {
     const res = await notion.pages.create(pageInfo)
 
-    console.log(res)
+    // console.log(res)
 
     return res
 }
@@ -180,12 +189,12 @@ const getTasks = async (training) => {
 // const setTrainings = async (person, trainings) => {}
 
 const setTasks = async (personFD, tasks) => {
-    console.log("running setTasks: " + personFD)
+    // console.log("running setTasks: " + personFD)
 
     const allRes = []
 
     for (const task of tasks) {
-        console.log("attempting to create task: " + task["title"])
+        console.log("creating task: " + task["title"])
 
         // create new page in tasks db - with title, icon, and personFD of task
         const personRes = await getPage(personFD)
@@ -241,7 +250,7 @@ const setTasks = async (personFD, tasks) => {
 
         const res = await createPage(info)
         
-        console.log(res)
+        // console.log(res)
 
         allRes.push(res)
     }
@@ -257,9 +266,19 @@ const assignTasks = async (personFD) => {
 
     const tasks = (await Promise.all(trainings.map(async train => await getTasks(train)))).filter(task => Object.keys(task).length > 0)
 
-    console.log(tasks)
+    // console.log(tasks)
 
-    const res = await setTasks(personFD, tasks)
+    const setRes = await setTasks(personFD, tasks)
+
+    const props = {
+        "SMU Enrollment": {
+            "status": {
+                "name": "Enrolled"
+            }
+        }
+    }
+
+    const res = await updatePage(personFD, props)
 
     return res
 
@@ -284,14 +303,18 @@ app.post("/", async (req, res) => {
     console.log(JSON.stringify(req.body, null, 4))
 
     if (!req.body.hasOwnProperty("entity") || !req.body.hasOwnProperty("data") || !req.body.data.hasOwnProperty("parent")) {
-        return res.json({"request invalid": "invalid request"})
+        const msJ = {"request invalid": "invalid request"}
+        console.log(msJ)
+        return res.json(msJ)
     }
 
     const page = req.body.entity
     const parentDB = req.body.data.parent.data_source_id
 
     if (parentDB !== databases.FD) {
-        return res.json({"request ignored": "unrelated DB changes"})
+        const msJ = {"request ignored": "unrelated DB changes"}
+        console.log(msJ)
+        return res.json(msJ)
     }
 
     const personFD = page.id
@@ -299,7 +322,9 @@ app.post("/", async (req, res) => {
     const personTeams = personInfo["properties"]["Teams"]["relation"]
 
     if (personTeams.length === 0) {
-        return res.json({"request ignored": "no teams"})
+        const msJ = {"request ignored": "no teams"}
+        console.log(msJ)
+        return res.json(msJ)
     }
 
     const personStart = personInfo["properties"]["FT Start Date"]["date"]["start"]
@@ -314,13 +339,17 @@ app.post("/", async (req, res) => {
 
         console.log("triggering task assignment to " + personFD + " within " + parentDB)
 
-        await assignTasks(personFD)
+        const autoRes = await assignTasks(personFD)
 
-        return res.json({"request accepted": "tasks assigned to " + personFD + " within " + parentDB})
+        const msJ = {"request accepted": "tasks assigned to " + personFD + " within " + parentDB}
+        console.log(msJ)
+        return res.json(msJ)
 
     }
 
-    return res.json({"request denied": "unmet individual conditions"})
+    const msJ = {"request denied": "unmet individual conditions"}
+    console.log(msJ)
+    return res.json(msJ)
     
 })
 
