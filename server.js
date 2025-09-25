@@ -89,8 +89,13 @@ const getPerson = async (name) => {
 
 }
 
+const verifyStarter = async (starter, tasksID) => {
+    const res = await getPageProp(starter, tasksID)
+
+    return res.results.length === 0
+}
+
 const getStarters = async () => {
-    // const allStarts = []
 
     const startsFilter = {
         "and": [
@@ -108,25 +113,23 @@ const getStarters = async () => {
                 }
             },
             {
-                "property": "Tasks SMU",
-                "relation": {
-                    "is_empty": true
+                "property": "SMU ",
+                "status": {
+                    "equals": "🔴 To Be Enrolled"
                 }
             }
-            // {
-            //     "property": "SMU Enrollment",
-            //     "status": {
-            //         "equals": "Not Enrolled"
-            //     }
-            // }
         ]
     }
 
     const res = await getDB(databases.FD, {filters: startsFilter})
 
-    console.log(JSON.stringify(res, null, 4))
+    const eligible =  await Promise.all(res.results.map(async starter => await verifyStarter(starter["id"], starter["properties"]["Tasks SMU"]["id"])))
 
-    return res.results
+    const starters = res.results.filter((_starter, si) => eligible[si])
+
+    console.log(JSON.stringify(starters, null, 4))
+
+    return starters
 }
 
 // const getTeam = async (personFD) => {
@@ -333,6 +336,10 @@ const deleteTasks = async (person) => {
 
 app.get("/", async (req, resp) => {
 
+    // const res = await getStarters()
+
+    // return resp.json(res)
+
     return resp.json({"test": "get"})
 
 })
@@ -349,8 +356,8 @@ app.post("/", async (req, res) => {
     if (req.headers.hasOwnProperty(indicator) && req.headers[indicator] === indicatorValue) {
         const starters = await getStarters()
 
-        console.log(starters.length)
         const startersCount = starters.length
+        console.log(startersCount)
         // const startersCount = 0
 
         if (startersCount === 0) {
