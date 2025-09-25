@@ -323,20 +323,7 @@ const deleteTasks = async (person) => {
 
 app.get("/", async (req, resp) => {
 
-    // const personFD = "27540a8e-51bc-81a5-948d-c9139d2fa2f3"
-
-    // const res = assignTasks(personFD)
-
-    // resp.json(res)
-
-    const res = await notion.search({
-        "filter": {
-            "property": "object",
-            "value": "data_source"
-        }
-    })
-
-    resp.json(res)
+    resp.json({"test": "get"})
 
 })
 
