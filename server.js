@@ -324,7 +324,7 @@ const deleteTasks = async (person) => {
 
 app.get("/", async (req, resp) => {
 
-    resp.json({"test": "get"})
+    return resp.json({"test": "get"})
 
     // const res = await getDB(databases.FD)
 
@@ -345,8 +345,8 @@ app.post("/", async (req, res) => {
         const starters = await getStarters()
 
         console.log(starters.length)
-        // const startersCount = starters.length
-        const startersCount = 0
+        const startersCount = starters.length
+        // const startersCount = 0
 
         if (startersCount === 0) {
             const msJ = {"periodic request skipped": "none matched criteria"}
