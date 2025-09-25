@@ -7,15 +7,20 @@ const notion = new Client({ auth: process.env.NOTION_API_KEY })
 app.use(express.json())
 
 // DB info - test workspace
-const databases = {
-    "FD": "27540a8e-51bc-8154-9a98-000b9f7c2d41",
-    "Trainings": "27540a8e-51bc-810f-b03a-000ba1403500",
-    "Tasks": "27540a8e-51bc-81e5-bcdf-000bd503f4da",
-    "Teams": "27540a8e-51bc-811c-a57a-000b33cc188f"
-}
+// const databases = {
+//     "FD": "27540a8e-51bc-8154-9a98-000b9f7c2d41",
+//     "Trainings": "27540a8e-51bc-810f-b03a-000ba1403500",
+//     "Tasks": "27540a8e-51bc-81e5-bcdf-000bd503f4da",
+//     "Teams": "27540a8e-51bc-811c-a57a-000b33cc188f"
+// }
 
 // DB info - real
-// const databases = {}
+const databases = {
+    "FD": "279fc07e-9b9c-8197-b62f-000b658ece81",
+    "Trainings": "279fc07e-9b9c-81dc-b32a-000bb6aba4ca",
+    "Tasks": "279fc07e-9b9c-81be-af6a-000b5b4a8ff1",
+    "Teams": "279fc07e-9b9c-8170-9316-000beff06980"
+}
 
 const getDB = async (sourceID, {filters = undefined, sort = undefined, count = undefined} = {}) => {
 
@@ -73,6 +78,45 @@ const getPerson = async (name) => {
 
     return res.results[0]
 
+}
+
+const getStarters = async () => {
+    // const allStarts = []
+
+    const startsFilter = {
+        "and": [
+            {
+                "property": "FT Start Date",
+                "date": {
+                    "equals": new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" })
+                }
+            },
+            {
+                "property": "Teams",
+                "relation": {
+                    "is_not_empty": true
+                }
+            },
+            {
+                "property": "Tasks SMU",
+                "relation": {
+                    "is_not_empty": true
+                }
+            },
+            {
+                "property": "SMU Enrollment",
+                "status": {
+                    "equals": "Not Enrolled"
+                }
+            }
+        ]
+    }
+
+    const res = await getDB(databases.FD, {filters: startsFilter})
+
+    console.log(JSON.stringify(res, null, 4))
+
+    return res.results
 }
 
 // const getTeam = async (personFD) => {
@@ -285,7 +329,14 @@ app.get("/", async (req, resp) => {
 
     // resp.json(res)
 
-    resp.json({"test": "get"})
+    const res = await notion.search({
+        "filter": {
+            "property": "object",
+            "value": "data_source"
+        }
+    })
+
+    resp.json(res)
 
 })
 
@@ -294,6 +345,29 @@ app.post("/", async (req, res) => {
 
     console.log(JSON.stringify(req.headers, null, 4))
     console.log(JSON.stringify(req.body, null, 4))
+
+    const indicator = "request_source"
+    const indicatorValue = "daily-mountain-hook-check"
+
+    if (req.headers.hasOwnProperty(indicator) && req.headers[indicator] === indicatorValue) {
+        const starters = await getStarters()
+
+        console.log(starters.length)
+        // const startersCount = starters.length
+        const startersCount = 0
+
+        if (startersCount === 0) {
+            const msJ = {"periodic request skipped": "none matched criteria"}
+            console.log(msJ)
+            return res.json(msJ)
+        }
+
+        await Promise.all(starters.map(async starter => await assignTasks(starter["properties"]["Notion Account*"]["people"][0]["id"], starter["id"])))
+
+        const msJ = {"periodic request completed": startersCount + " assigned"}
+        console.log(msJ)
+        return res.json(msJ)
+    }
 
     if (!req.body.hasOwnProperty("entity") || !req.body.hasOwnProperty("data") || !req.body.data.hasOwnProperty("parent")) {
         const msJ = {"request invalid": "invalid request"}
