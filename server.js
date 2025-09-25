@@ -41,6 +41,15 @@ const getPage = async (pageID) => {
     return res
 }
 
+const getPageProp = async (pageID, propID) => {
+    const res = await notion.pages.properties.retrieve({
+        page_id: pageID,
+        property_id: propID
+    })
+
+    return res
+}
+
 const updatePage = async (pageID, props) => {
     const res = await notion.pages.update({
         page_id: pageID,
@@ -326,10 +335,6 @@ app.get("/", async (req, resp) => {
 
     return resp.json({"test": "get"})
 
-    // const res = await getDB(databases.FD)
-
-    // return resp.json(res)
-
 })
 
 app.post("/", async (req, res) => {
@@ -393,12 +398,13 @@ app.post("/", async (req, res) => {
 
     const personEnrolled = personInfo["properties"]["SMU "]["status"]?.["name"]
 
-    const personTasks = personInfo["properties"]["Tasks SMU"]["relation"]
+    const tasksID = personInfo["properties"]["Tasks SMU"]["id"]
+    const personTasks = await getPageProp(personFD, tasksID)
+    const numTasks = personTasks.results.length
 
-    console.log(personTasks.length + " tasks of person updated")
-    console.log(personTasks)
+    console.log(numTasks + " tasks of person updated")
 
-    if ((startsToday && personEnrolled === "🔴 To Be Enrolled" && personTasks.length === 0) || personEnrolled === "🔄 Reset Enrollment") {
+    if ((startsToday && personEnrolled === "🔴 To Be Enrolled" && numTasks === 0) || personEnrolled === "🔄 Reset Enrollment") {
 
         console.log("triggering task assignment to " + personFD + " within " + parentDB)
 
