@@ -14,12 +14,19 @@ app.use(express.json())
 //     "Teams": "27540a8e-51bc-811c-a57a-000b33cc188f"
 // }
 
+// const databases = {
+//     "FD": "279fc07e-9b9c-8197-b62f-000b658ece81",
+//     "Trainings": "279fc07e-9b9c-81dc-b32a-000bb6aba4ca",
+//     "Tasks": "279fc07e-9b9c-81be-af6a-000b5b4a8ff1",
+//     "Teams": "279fc07e-9b9c-8170-9316-000beff06980"
+// }
+
 // DB info - real
 const databases = {
-    "FD": "279fc07e-9b9c-8197-b62f-000b658ece81",
-    "Trainings": "279fc07e-9b9c-81dc-b32a-000bb6aba4ca",
-    "Tasks": "279fc07e-9b9c-81be-af6a-000b5b4a8ff1",
-    "Teams": "279fc07e-9b9c-8170-9316-000beff06980"
+    "FD": process.env.DS_FD,
+    "Trainings": process.env.DS_TRAINS,
+    "Tasks": process.env.DS_TASKS,
+    "Teams": process.env.DS_TEAMS
 }
 
 const getDB = async (sourceID, {filters = undefined, sort = undefined, count = undefined} = {}) => {
@@ -337,6 +344,13 @@ const deleteTasks = async (person) => {
 app.get("/", async (req, resp) => {
 
     // const res = await getStarters()
+
+    // const res = await notion.search({
+    //     filter: {
+    //         "property": "object",
+    //         "value": "data_source"
+    //     }
+    // })
 
     // return resp.json(res)
 
