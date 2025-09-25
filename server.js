@@ -101,7 +101,7 @@ const getStarters = async () => {
             {
                 "property": "Tasks SMU",
                 "relation": {
-                    "is_not_empty": true
+                    "is_empty": true
                 }
             }
             // {
