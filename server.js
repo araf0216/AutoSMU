@@ -88,7 +88,8 @@ const getStarters = async () => {
             {
                 "property": "FT Start Date",
                 "date": {
-                    "equals": new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" })
+                    // "equals": new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" })
+                    "equals": new Date().toISOString().split("T")[0]
                 }
             },
             {
