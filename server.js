@@ -395,6 +395,8 @@ app.post("/", async (req, res) => {
 
     const personTasks = personInfo["properties"]["Tasks SMU"]["relation"]
 
+    console.log(personTasks.length + " tasks of person updated")
+
     if ((startsToday && personEnrolled === "🔴 To Be Enrolled" && personTasks.length === 0) || personEnrolled === "🔄 Reset Enrollment") {
 
         console.log("triggering task assignment to " + personFD + " within " + parentDB)
