@@ -103,13 +103,13 @@ const getStarters = async () => {
                 "relation": {
                     "is_not_empty": true
                 }
-            },
-            {
-                "property": "SMU Enrollment",
-                "status": {
-                    "equals": "Not Enrolled"
-                }
             }
+            // {
+            //     "property": "SMU Enrollment",
+            //     "status": {
+            //         "equals": "Not Enrolled"
+            //     }
+            // }
         ]
     }
 
@@ -294,9 +294,9 @@ const assignTasks = async (person, personFD) => {
     const setRes = await setTasks(person, personFD, tasks)
 
     const props = {
-        "SMU Enrollment": {
+        "SMU ": {
             "status": {
-                "name": "Enrolled"
+                "name": "✅ Enrolled"
             }
         }
     }
@@ -325,6 +325,10 @@ const deleteTasks = async (person) => {
 app.get("/", async (req, resp) => {
 
     resp.json({"test": "get"})
+
+    // const res = await getDB(databases.FD)
+
+    // return resp.json(res)
 
 })
 
@@ -387,12 +391,11 @@ app.post("/", async (req, res) => {
     const personStart = personInfo["properties"]["FT Start Date"]["date"]["start"]
     const startsToday = personStart === new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" })
 
-    const personEnrolled = personInfo["properties"]["SMU Enrollment"]["status"]["name"]
+    const personEnrolled = personInfo["properties"]["SMU "]["status"]?.["name"]
 
     const personTasks = personInfo["properties"]["Tasks SMU"]["relation"]
 
-
-    if ((startsToday && personEnrolled === "Not Enrolled" && personTasks.length === 0) || personEnrolled === "Reset Enrollment") {
+    if ((startsToday && personEnrolled === "🔴 To Be Enrolled" && personTasks.length === 0) || personEnrolled === "🔄 Reset Enrollment") {
 
         console.log("triggering task assignment to " + personFD + " within " + parentDB)
 
