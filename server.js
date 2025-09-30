@@ -439,7 +439,7 @@ app.post("/", async (req, res) => {
 
         console.log("triggering task assignment to " + personFD + " within " + parentDB)
 
-        if (personEnrolled === "Reset Enrollment") await deleteTasks(personFD)
+        if (personEnrolled === "🔄 Reset Enrollment") await deleteTasks(personFD)
 
         await assignTasks(person, personFD)
 
@@ -458,3 +458,4 @@ app.post("/", async (req, res) => {
 
 
 app.listen(3000)
+
