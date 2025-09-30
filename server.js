@@ -163,10 +163,20 @@ const getTeams = async (personFD) => {
 const getTrainings = async (team) => {
 
     const trainFilter = {
-        "property": "Teams",
-        "relation": {
-            "contains": team
-        }
+        "and": [
+            {
+                "property": "Teams",
+                "relation": {
+                    "contains": team
+                }
+            },
+            {
+                "property": "Status",
+                "status": {
+                    "equals": "Published"
+                }
+            }
+        ]
     }
 
     const res = await getDB(databases.Trainings, {filters: trainFilter})
@@ -326,11 +336,11 @@ const assignTasks = async (person, personFD) => {
 
 }
 
-const deleteTasks = async (person) => {
+const deleteTasks = async (personFD) => {
     const personFilter = {
-        "property": "Assignment",
-        "people": {
-            "contains": person
+        "property": "Firm Directory",
+        "relation": {
+            "contains": personFD
         }
     }
 
@@ -429,7 +439,7 @@ app.post("/", async (req, res) => {
 
         console.log("triggering task assignment to " + personFD + " within " + parentDB)
 
-        if (personEnrolled === "Reset Enrollment") await deleteTasks(person)
+        if (personEnrolled === "Reset Enrollment") await deleteTasks(personFD)
 
         await assignTasks(person, personFD)
 
@@ -444,6 +454,7 @@ app.post("/", async (req, res) => {
     return res.json(msJ)
     
 })
+
 
 
 app.listen(3000)
